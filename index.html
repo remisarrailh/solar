@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>NEBULA PROTOCOL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════ BOOT ══ -->
+  <div id="screen-boot" class="screen screen--active" data-screen="boot">
+    <div class="boot-container">
+      <div class="boot-logo">
+        <span class="boot-logo__prefix">// SYS</span>
+        <h1 class="boot-logo__title">NEBULA<br>PROTOCOL</h1>
+        <span class="boot-logo__version">v1.0.0 — RESTRICTED ACCESS</span>
+      </div>
+      <div class="boot-status">
+        <div class="boot-status__line" id="boot-line-1">▸ Initialisation du réseau P2P...</div>
+        <div class="boot-status__line boot-status__line--hidden" id="boot-line-2">▸ Chargement des modules systèmes...</div>
+        <div class="boot-status__line boot-status__line--hidden" id="boot-line-3">▸ Connexion établie.</div>
+      </div>
+      <div class="boot-error" id="boot-error" style="display:none">
+        <span class="boot-error__icon">⚠</span>
+        <span id="boot-error-msg">Impossible de se connecter au réseau.</span>
+        <button class="btn btn--ghost" id="boot-retry-btn">RÉESSAYER</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ MAIN MENU ══ -->
+  <div id="screen-main-menu" class="screen" data-screen="main-menu">
+    <div class="menu-container">
+      <header class="menu-header">
+        <div class="menu-header__cctv">CAM 00 — PONT PRINCIPAL</div>
+        <h1 class="menu-header__title">NEBULA<br><span>PROTOCOL</span></h1>
+        <div class="menu-header__sub">SYSTÈME DE GESTION DE CRISE — NIVEAU ROUGE</div>
+      </header>
+      <nav class="menu-nav">
+        <button class="btn btn--primary menu-btn" id="btn-host">
+          <span class="btn__icon">◈</span> CRÉER UNE PARTIE
+        </button>
+        <button class="btn btn--primary menu-btn" id="btn-join">
+          <span class="btn__icon">◉</span> REJOINDRE UNE PARTIE
+        </button>
+        <button class="btn btn--secondary menu-btn" id="btn-solo">
+          <span class="btn__icon">◇</span> MODE SOLO — COMMANDANT
+        </button>
+        <button class="btn btn--ghost menu-btn" id="btn-test-minigames">
+          <span class="btn__icon">⬡</span> TEST MINI-JEUX
+        </button>
+        <button class="btn btn--ghost menu-btn" id="btn-progression">
+          <span class="btn__icon">◈</span> PROGRESSION
+        </button>
+      </nav>
+      <div class="menu-footer">
+        <span>ID OPÉRATEUR : <span id="menu-player-id">—</span></span>
+        <span>PROTOCOLE PeerJS ACTIF</span>
+      </div>
+    </div>
+
+    <!-- Join overlay -->
+    <div class="overlay" id="overlay-join" style="display:none">
+      <div class="overlay__panel">
+        <div class="overlay__title">ENTRER LE CODE DE LA SALLE</div>
+        <input class="input-code" id="join-code-input" type="text" placeholder="EX: NEBULA-4F2A" maxlength="20" autocomplete="off" spellcheck="false" />
+        <div class="overlay__actions">
+          <button class="btn btn--primary" id="btn-join-confirm">SE CONNECTER</button>
+          <button class="btn btn--ghost" id="btn-join-cancel">ANNULER</button>
+        </div>
+        <div class="overlay__error" id="join-error" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- Name overlay -->
+    <div class="overlay" id="overlay-name" style="display:none">
+      <div class="overlay__panel">
+        <div class="overlay__title">IDENTITÉ DE L'OPÉRATEUR</div>
+        <input class="input-code" id="name-input" type="text" placeholder="CALLSIGN" maxlength="16" autocomplete="off" spellcheck="false" />
+        <div class="overlay__actions">
+          <button class="btn btn--primary" id="btn-name-confirm">CONFIRMER</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ LOBBY ══ -->
+  <div id="screen-lobby" class="screen" data-screen="lobby">
+    <div class="lobby-container">
+      <header class="screen-header">
+        <div class="screen-header__cam">CAM 01 — SALLE DE BRIEFING</div>
+        <h2 class="screen-header__title">BRIEFING PRÉ-MISSION</h2>
+      </header>
+      <div class="lobby-body">
+        <div class="lobby-code-panel panel">
+          <div class="panel__label">CODE DE LA SALLE</div>
+          <div class="lobby-room-code" id="lobby-room-code">——————</div>
+          <button class="btn btn--ghost btn--sm" id="btn-copy-code">COPIER LE CODE</button>
+          <div class="panel__label" style="margin-top:1rem">EN ATTENTE DE JOUEURS...</div>
+          <div class="lobby-players" id="lobby-players"></div>
+        </div>
+        <div class="lobby-role-panel panel">
+          <div class="panel__label">CHOISIR UN RÔLE</div>
+          <div class="role-cards" id="role-cards">
+            <div class="role-card" data-role="controller">
+              <div class="role-card__icon">◈</div>
+              <div class="role-card__name">CONTRÔLEUR</div>
+              <div class="role-card__desc">Vue globale du vaisseau. Coordonne les équipes. Ne peut pas réparer.</div>
+            </div>
+            <div class="role-card" data-role="technician">
+              <div class="role-card__icon">◉</div>
+              <div class="role-card__name">TECHNICIEN</div>
+              <div class="role-card__desc">Intervient sur le terrain. Répare les pannes via des mini-jeux.</div>
+            </div>
+          </div>
+          <div class="lobby-settings">
+            <div class="panel__label">PARAMÈTRES</div>
+            <label class="setting-row">
+              <span>Difficulté</span>
+              <select class="select" id="setting-difficulty">
+                <option value="easy">FACILE</option>
+                <option value="normal" selected>NORMAL</option>
+                <option value="hard">DIFFICILE</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="lobby-footer">
+        <button class="btn btn--ghost" id="btn-lobby-back">← RETOUR</button>
+        <button class="btn btn--primary" id="btn-lobby-ready">PRÊT ▸</button>
+        <button class="btn btn--primary" id="btn-lobby-start" style="display:none">LANCER LA MISSION ▸</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════ CONTROLLER ══ -->
+  <div id="screen-controller" class="screen" data-screen="controller">
+    <div class="controller-container">
+      <header class="game-header">
+        <div class="game-header__left">
+          <span class="game-header__cam">PONT DE CONTRÔLE</span>
+          <span class="game-header__role role-badge role-badge--controller">CONTRÔLEUR</span>
+        </div>
+        <div class="game-header__center">
+          <div class="ship-stat" id="ctrl-integrity">
+            <span class="ship-stat__label">INTÉGRITÉ</span>
+            <div class="ship-stat__bar"><div class="ship-stat__fill" id="ctrl-integrity-fill" style="width:100%"></div></div>
+            <span class="ship-stat__val" id="ctrl-integrity-val">100%</span>
+          </div>
+          <div class="ship-stat" id="ctrl-oxygen">
+            <span class="ship-stat__label">OXYGÈNE</span>
+            <div class="ship-stat__bar"><div class="ship-stat__fill ship-stat__fill--oxygen" id="ctrl-oxygen-fill" style="width:100%"></div></div>
+            <span class="ship-stat__val" id="ctrl-oxygen-val">100%</span>
+          </div>
+        </div>
+        <div class="game-header__right">
+          <button class="btn btn--ghost btn--sm btn--mute" id="ctrl-mute-btn" title="Musique">♪</button>
+          <div class="game-timer" id="ctrl-timer">00:00</div>
+        </div>
+      </header>
+
+      <div class="controller-body">
+        <div class="ship-map panel" id="ship-map">
+          <!-- Rooms rendered by ui.js -->
+        </div>
+        <div class="controller-sidebar">
+          <div class="panel crisis-list-panel">
+            <div class="panel__label">ALERTES ACTIVES</div>
+            <div class="crisis-list" id="ctrl-crisis-list">
+              <div class="crisis-list__empty">Aucune alerte.</div>
+            </div>
+          </div>
+          <div class="panel player-list-panel">
+            <div class="panel__label">ÉQUIPAGE</div>
+            <div class="player-list" id="ctrl-player-list"></div>
+          </div>
+          <div class="panel chat-panel">
+            <div class="panel__label">COMMUNICATIONS</div>
+            <div class="chat-log" id="ctrl-chat-log"></div>
+            <div class="chat-input-row">
+              <input class="input-chat" id="ctrl-chat-input" type="text" placeholder="Message..." maxlength="80" />
+              <button class="btn btn--ghost btn--sm" id="ctrl-chat-send">▸</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════ TECHNICIAN ══ -->
+  <div id="screen-technician" class="screen" data-screen="technician">
+    <div class="technician-container">
+      <header class="game-header game-header--compact">
+        <div class="game-header__left">
+          <span class="game-header__cam" id="tech-room-name">SALLE —</span>
+          <span class="game-header__role role-badge role-badge--technician">TECHNICIEN</span>
+        </div>
+        <div class="game-header__center">
+          <div class="ship-stat ship-stat--sm">
+            <span class="ship-stat__label">INTÉG.</span>
+            <div class="ship-stat__bar"><div class="ship-stat__fill" id="tech-integrity-fill" style="width:100%"></div></div>
+          </div>
+        </div>
+        <div class="game-header__right">
+          <button class="btn btn--ghost btn--sm btn--mute" id="tech-mute-btn" title="Musique">♪</button>
+          <div class="game-timer" id="tech-timer">00:00</div>
+        </div>
+      </header>
+
+      <div class="room-view" id="tech-room-view">
+        <div class="room-view__cctv-frame">
+          <span class="room-view__cctv-label">● REC</span>
+          <span class="room-view__cctv-time" id="tech-cctv-time">00:00:00</span>
+        </div>
+        <div class="room-view__image-wrap">
+          <div class="room-view__image" id="tech-room-image"></div>
+          <div class="room-view__scanlines"></div>
+          <div class="room-view__noise"></div>
+        </div>
+        <div class="room-view__crisis-indicators" id="tech-crisis-indicators"></div>
+      </div>
+
+      <div class="tech-bottom">
+        <div class="panel tech-crisis-panel">
+          <div class="panel__label">PANNES EN COURS</div>
+          <div class="crisis-list crisis-list--compact" id="tech-crisis-list">
+            <div class="crisis-list__empty">Zone sécurisée.</div>
+          </div>
+        </div>
+        <div class="panel skill-hud" id="tech-skill-hud">
+          <!-- Populated by ui.js -->
+        </div>
+      </div>
+
+      <div class="panel chat-panel chat-panel--compact">
+        <div class="chat-log" id="tech-chat-log"></div>
+        <div class="chat-input-row">
+          <input class="input-chat" id="tech-chat-input" type="text" placeholder="Comm..." maxlength="80" />
+          <button class="btn btn--ghost btn--sm" id="tech-chat-send">▸</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test mode HUD -->
+    <div class="test-mode-hud" id="test-mode-hud" style="display:none">
+      <span id="test-mode-score">TEST MODE — 0✓ / 0</span>
+      <button class="btn btn--ghost btn--sm" id="btn-test-quit">✕ QUITTER</button>
+    </div>
+
+    <!-- Minigame overlay (fullscreen, shown on top) -->
+    <div class="minigame-overlay" id="minigame-overlay" style="display:none">
+      <div class="minigame-overlay__header">
+        <div class="minigame-overlay__crisis-name" id="mg-crisis-name">PANNE ÉLECTRIQUE</div>
+        <div class="minigame-overlay__timer" id="mg-timer">45</div>
+      </div>
+      <div class="minigame-container" id="minigame-container"></div>
+      <div class="minigame-overlay__result" id="mg-result" style="display:none">
+        <div class="mg-result__icon" id="mg-result-icon"></div>
+        <div class="mg-result__text" id="mg-result-text"></div>
+        <div class="mg-result__xp" id="mg-result-xp"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════ COMMANDER ══ -->
+  <div id="screen-commander" class="screen" data-screen="commander">
+    <div class="commander-container">
+      <header class="game-header game-header--compact">
+        <div class="game-header__left">
+          <span class="game-header__cam">POSTE DE COMMANDEMENT</span>
+          <span class="game-header__role role-badge role-badge--commander">COMMANDANT</span>
+        </div>
+        <div class="game-header__center">
+          <div class="ship-stat ship-stat--sm">
+            <span class="ship-stat__label">INTÉG.</span>
+            <div class="ship-stat__bar"><div class="ship-stat__fill" id="cmd-integrity-fill" style="width:100%"></div></div>
+            <span class="ship-stat__val" id="cmd-integrity-val">100%</span>
+          </div>
+          <div class="ship-stat ship-stat--sm">
+            <span class="ship-stat__label">O²</span>
+            <div class="ship-stat__bar"><div class="ship-stat__fill ship-stat__fill--oxygen" id="cmd-oxygen-fill" style="width:100%"></div></div>
+          </div>
+        </div>
+        <div class="game-header__right">
+          <button class="btn btn--ghost btn--sm btn--mute" id="cmd-mute-btn" title="Musique">♪</button>
+          <div class="game-timer" id="cmd-timer">00:00</div>
+        </div>
+      </header>
+
+      <div class="commander-body">
+        <div class="commander-left">
+          <div class="panel npc-panel">
+            <div class="panel__label">ÉQUIPAGE</div>
+            <div class="npc-portraits" id="npc-portraits"></div>
+          </div>
+          <div class="panel crisis-list-panel">
+            <div class="panel__label">ALERTES</div>
+            <div class="crisis-list crisis-list--compact" id="cmd-crisis-list"></div>
+          </div>
+        </div>
+        <div class="commander-right">
+          <div class="ship-map ship-map--commander panel" id="cmd-ship-map">
+            <!-- Populated by ui.js -->
+          </div>
+          <div class="room-view room-view--sm" id="cmd-room-view">
+            <div class="room-view__cctv-frame">
+              <span class="room-view__cctv-label">● REC</span>
+              <span class="room-view__cctv-label" id="cmd-room-name">—</span>
+            </div>
+            <div class="room-view__image-wrap">
+              <div class="room-view__image" id="cmd-room-image"></div>
+              <div class="room-view__scanlines"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Commander minigame overlay (same structure) -->
+    <div class="minigame-overlay" id="cmd-minigame-overlay" style="display:none">
+      <div class="minigame-overlay__header">
+        <div class="minigame-overlay__crisis-name" id="cmd-mg-crisis-name">PANNE</div>
+        <div class="minigame-overlay__timer" id="cmd-mg-timer">45</div>
+      </div>
+      <div class="minigame-container" id="cmd-minigame-container"></div>
+      <div class="minigame-overlay__result" id="cmd-mg-result" style="display:none">
+        <div class="mg-result__icon" id="cmd-mg-result-icon"></div>
+        <div class="mg-result__text" id="cmd-mg-result-text"></div>
+        <div class="mg-result__xp" id="cmd-mg-result-xp"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════ DEBRIEF ══ -->
+  <div id="screen-debrief" class="screen" data-screen="debrief">
+    <div class="debrief-container">
+      <header class="screen-header">
+        <div class="screen-header__cam">CAM 99 — RAPPORT DE MISSION</div>
+        <h2 class="screen-header__title" id="debrief-title">MISSION TERMINÉE</h2>
+      </header>
+      <div class="debrief-body">
+        <div class="panel debrief-stats">
+          <div class="panel__label">STATISTIQUES</div>
+          <div class="debrief-stat-grid" id="debrief-stats"></div>
+        </div>
+        <div class="panel debrief-xp">
+          <div class="panel__label">PROGRESSION</div>
+          <div class="debrief-xp-list" id="debrief-xp-list"></div>
+        </div>
+      </div>
+      <div class="debrief-footer">
+        <button class="btn btn--primary" id="btn-debrief-menu">RETOUR AU MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════ PROGRESSION ══ -->
+  <div id="screen-progression" class="screen" data-screen="progression">
+    <div class="progression-container">
+      <header class="screen-header">
+        <div class="screen-header__cam">CAM 03 — DOSSIER OPÉRATEUR</div>
+        <h2 class="screen-header__title">PROGRESSION</h2>
+      </header>
+      <div class="progression-body">
+        <div class="panel prog-profile">
+          <div class="panel__label">PROFIL</div>
+          <div class="prog-callsign" id="prog-callsign">—</div>
+          <div class="prog-stats-row">
+            <div class="prog-stat"><span class="prog-stat__val" id="prog-total-games">0</span><span class="prog-stat__label">MISSIONS</span></div>
+            <div class="prog-stat"><span class="prog-stat__val" id="prog-total-crises">0</span><span class="prog-stat__label">PANNES RÉSOLUES</span></div>
+          </div>
+        </div>
+        <div class="panel prog-skills">
+          <div class="panel__label">COMPÉTENCES</div>
+          <div class="skill-list" id="prog-skill-list"></div>
+        </div>
+        <div class="panel prog-specs">
+          <div class="panel__label">SPÉCIALISATIONS DÉBLOQUÉES</div>
+          <div class="spec-list" id="prog-spec-list">
+            <div class="spec-list__empty">Aucune spécialisation débloquée.</div>
+          </div>
+        </div>
+      </div>
+      <div class="progression-footer">
+        <button class="btn btn--ghost" id="btn-prog-back">← RETOUR</button>
+        <button class="btn btn--ghost btn--danger" id="btn-prog-reset">RÉINITIALISER</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio -->
+  <audio id="game-music" src="assets/music/abmaitnGameMusic.mp3" loop preload="auto"></audio>
+
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

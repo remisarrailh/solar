@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "C:\\Program Files\\nodejs\\npx.cmd",
+      "args": ["chrome-devtools-mcp@latest", "--autoConnect"],
+      "env": {
+        "PATH": "C:\\Program Files\\nodejs;C:\\Windows\\System32;C:\\Windows;C:\\Users\\remi\\AppData\\Roaming\\npm"
+      }
+    }
+  }
+}
