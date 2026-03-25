@@ -26,6 +26,13 @@
         techSlotId: selectedRole === 'technician' ? selectedSlot : null,
         ready: false,
       }
+    } else {
+      // Client: announce ourselves so the host gets our callsign and sends WELCOME back
+      Network.send(Network.hostId, MSG.JOIN, {
+        callsign: appCtx.profile?.callsign ?? 'Opérateur',
+        role: selectedRole,
+        techSlotId: selectedRole === 'technician' ? selectedSlot : null,
+      })
     }
 
     Network.onMessage   = handleMessage

@@ -70,6 +70,8 @@ export const State = {
       claimedBy: null,   // peerId of player who controls this slot, null = AI
       injured: false,
       injuryCause: null,
+      injuryType: null,
+      carrying: null,
     }))
 
     this.current = {
@@ -360,11 +362,23 @@ export const State = {
     if (delta.outcome !== undefined)       state.outcome       = delta.outcome
 
     if (delta.crises) {
+      const roomsToUpdate = new Set()
       for (const [id, c] of Object.entries(delta.crises)) {
         state.crises[id] = c
         const room = state.rooms[c.roomId]
-        if (room && !room.activeCrises.includes(id)) room.activeCrises.push(id)
+        if (room) {
+          if (c.state === 'active' || c.state === 'resolving') {
+            if (!room.activeCrises.includes(id)) room.activeCrises.push(id)
+            roomsToUpdate.add(c.roomId)
+          } else {
+            // Crisis ended — remove from room
+            room.activeCrises = room.activeCrises.filter(i => i !== id)
+            if (c.state === 'escalated') room.status = 'destroyed'
+            else roomsToUpdate.add(c.roomId)
+          }
+        }
       }
+      for (const roomId of roomsToUpdate) this._updateRoomStatus(roomId)
     }
     if (delta.newCrises) {
       for (const c of delta.newCrises) {
