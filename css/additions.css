@@ -1,0 +1,383 @@
+
+/* ══════════════════════════════════════════════════════════
+   CAMERA GRID (Controller + Commander)
+   ══════════════════════════════════════════════════════════ */
+.camera-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: var(--gap);
+}
+.camera-grid--sm { padding: 0; }
+
+.camera-cell {
+  position: relative;
+  cursor: pointer;
+  border: 1px solid var(--color-border-hi);
+  overflow: hidden;
+  aspect-ratio: 4/3;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.2s;
+}
+.camera-cell:hover { border-color: var(--color-text-dim); }
+.camera-cell--selected { border-color: var(--color-accent) !important; box-shadow: 0 0 0 1px var(--color-accent); }
+.camera-cell--warning  { border-color: var(--color-warning); }
+.camera-cell--critical { border-color: var(--color-critical); animation: cam-pulse 2s step-end infinite; }
+.camera-cell--destroyed { opacity: 0.35; pointer-events: none; }
+.camera-cell--target { cursor: crosshair; }
+.camera-cell--target:hover { border-color: var(--color-accent); }
+
+/* Anomaly: subtle pulsing dot — controller must click to confirm (+15s bonus) */
+.camera-cell--anomaly { border-color: var(--color-border-hi); }
+.camera-cell--anomaly::after {
+  content: '';
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--color-warning);
+  animation: anomaly-blink 3s ease-in-out infinite;
+  z-index: 20;
+}
+@keyframes anomaly-blink {
+  0%, 100% { opacity: 0.15; }
+  50%       { opacity: 0.75; }
+}
+@keyframes cam-pulse {
+  0%, 100% { border-color: var(--color-critical); }
+  50%       { border-color: rgba(255,34,51,0.4); }
+}
+
+.camera-cell__cctv {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 4px;
+  background: linear-gradient(180deg, rgba(7,7,13,0.75) 0%, transparent 100%);
+  pointer-events: none;
+}
+.camera-cell__rec {
+  font-size: 7px;
+  letter-spacing: 0.1em;
+  color: var(--color-critical);
+}
+.camera-cell__anomaly-dot {
+  font-size: 8px;
+  color: var(--color-warning);
+  animation: anomaly-blink 1.5s ease-in-out infinite;
+}
+.camera-cell__image {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--color-bg);
+}
+.camera-cell__scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px
+  );
+  pointer-events: none;
+}
+.camera-cell__label {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  font-size: 7px;
+  letter-spacing: 0.12em;
+  color: var(--color-text-dim);
+  padding: 2px 4px;
+  background: linear-gradient(0deg, rgba(7,7,13,0.8) 0%, transparent 100%);
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.camera-cell__crisis-count {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--color-critical);
+  color: #fff;
+  font-size: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  z-index: 15;
+}
+.camera-cell__crew {
+  position: absolute;
+  bottom: 10px; right: 3px;
+  display: flex;
+  gap: 2px;
+  pointer-events: none;
+  z-index: 12;
+}
+.camera-cell__crew-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+/* ══════════════════════════════════════════════════════════
+   ACTION PANEL (Controller actions)
+   ══════════════════════════════════════════════════════════ */
+.action-panel { display: flex; flex-direction: column; gap: 4px; }
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border-hi);
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  text-align: left;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.15s, background 0.15s;
+  min-height: 40px;
+  width: 100%;
+}
+.action-btn:not(.action-btn--disabled):not(.action-btn--offline):hover {
+  border-color: var(--color-accent);
+  background: rgba(0,255,180,0.05);
+}
+.action-btn--pending { border-color: var(--color-accent) !important; background: rgba(0,255,180,0.08); }
+.action-btn--offline { opacity: 0.4; cursor: not-allowed; border-color: var(--color-critical); }
+.action-btn--disabled:not(.action-btn--offline) { opacity: 0.5; cursor: not-allowed; }
+
+.action-btn__icon { font-size: 1rem; flex-shrink: 0; }
+.action-btn__name { flex: 1; }
+.action-btn__status {
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--color-text-dim);
+  flex-shrink: 0;
+}
+.action-btn__status--cd { color: var(--color-warning); }
+.action-btn__status--ready { color: var(--color-accent); }
+
+.action-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem var(--gap);
+  background: rgba(0,255,180,0.06);
+  border-bottom: 1px solid var(--color-accent);
+  font-size: 0.7rem;
+  color: var(--color-accent);
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════════════════
+   DISTRESS FEED
+   ══════════════════════════════════════════════════════════ */
+.distress-feed { border-color: var(--color-critical) !important; }
+.distress-entry {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.distress-entry:last-child { border-bottom: none; }
+.distress-entry__name { color: var(--color-text-hi); font-weight: bold; }
+.distress-entry__room { color: var(--color-text-dim); }
+
+/* ══════════════════════════════════════════════════════════
+   TECHNICIAN MOVEMENT
+   ══════════════════════════════════════════════════════════ */
+.movement-panel { display: flex; flex-direction: column; gap: 0.4rem; }
+.movement-rooms { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.movement-room-btn {
+  flex: 1;
+  min-width: 70px;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--color-border-hi);
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px;
+}
+.movement-room-btn:hover:not(:disabled) { border-color: var(--color-accent); color: var(--color-accent); }
+.movement-room-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.movement-room-btn--warning { border-color: var(--color-warning); }
+.movement-room-btn--critical { border-color: var(--color-critical); }
+.movement-room-btn--open { border-color: var(--color-accent); }
+.movement-room-btn__alert {
+  position: absolute;
+  top: 2px; right: 4px;
+  font-size: 8px;
+  color: var(--color-critical);
+  font-weight: bold;
+}
+
+.btn--distress {
+  width: 100%;
+  padding: 0.6rem;
+  border: 2px solid var(--color-critical);
+  background: rgba(255,34,51,0.08);
+  color: var(--color-critical);
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  min-height: 48px;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn--distress:active { background: rgba(255,34,51,0.2); }
+
+/* ══════════════════════════════════════════════════════════
+   SOLO TAB BAR (Commander multi-view)
+   ══════════════════════════════════════════════════════════ */
+.solo-tabs {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+.solo-tab {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--color-border-hi);
+  background: transparent;
+  color: var(--color-text-dim);
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 32px;
+}
+.solo-tab--active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: rgba(0,255,180,0.07);
+}
+.solo-tab--injured { border-color: var(--color-critical) !important; color: var(--color-critical) !important; }
+.solo-tab--busy { border-color: var(--color-warning); color: var(--color-warning); }
+
+.tech-solo-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.tech-solo-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+  padding: var(--gap);
+  overflow-y: auto;
+}
+@media (max-width: 480px) { .tech-solo-bottom { grid-template-columns: 1fr; } }
+
+.tech-injured-banner {
+  padding: 0.5rem var(--gap);
+  background: rgba(255,34,51,0.12);
+  border-bottom: 1px solid var(--color-critical);
+  color: var(--color-critical);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+}
+
+/* Controller main area */
+.controller-main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  gap: var(--gap);
+  padding: var(--gap);
+}
+
+/* ══════════════════════════════════════════════════════════
+   COOPERATIVE / CARRY ACTIONS
+   ══════════════════════════════════════════════════════════ */
+.coop-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.7rem;
+}
+.coop-action:last-child { border-bottom: none; }
+.coop-action--warning { color: var(--color-warning); }
+
+.crisis-entry__info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.crisis-entry__coop {
+  font-size: 0.6rem;
+  color: var(--color-accent);
+  letter-spacing: 0.08em;
+}
+
+.tech-status-msg {
+  font-size: 0.75rem;
+  color: var(--color-critical);
+  padding: 0.3rem 0;
+  line-height: 1.4;
+}
+
+/* ══════════════════════════════════════════════════════════
+   SLOT PICKER (Lobby)
+   ══════════════════════════════════════════════════════════ */
+.slot-picker {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.3rem;
+  margin-bottom: 0.75rem;
+}
+.slot-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--color-border-hi);
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  cursor: pointer;
+  text-align: left;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  min-height: 44px;
+}
+.slot-btn:not(:disabled):hover { border-color: var(--color-accent); }
+.slot-btn--selected { border-color: var(--color-accent) !important; color: var(--color-accent); background: rgba(0,255,180,0.05); }
+.slot-btn--taken { opacity: 0.4; cursor: not-allowed; }
+.slot-btn__name { font-weight: bold; letter-spacing: 0.1em; }
+.slot-btn__room { color: var(--color-text-dim); font-size: 0.6rem; }
+.slot-btn__taken {
+  position: absolute;
+  top: 3px; right: 4px;
+  font-size: 0.55rem;
+  color: var(--color-critical);
+  letter-spacing: 0.05em;
+}
+
+/* Injured crew dot */
+.crew-dot--injured { background: var(--color-critical) !important; }
