@@ -42,7 +42,7 @@
     if (!joinCode.trim()) return
     joinError = ''
     try {
-      await Network.join(joinCode.trim().toUpperCase())
+      await Network.join(joinCode.trim())
       showJoinOverlay = false
       dispatch('join')
     } catch (e) {
