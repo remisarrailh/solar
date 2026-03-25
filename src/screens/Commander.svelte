@@ -200,8 +200,7 @@
     : []
   $: techRoomCrises = techRoom && gs && currentTech
     ? Object.values(gs.crises ?? {}).filter(c =>
-        c.roomId === techRoom &&
-        (c.state === 'active' || (c.state === 'resolving' && c.assignedTo === currentTech.id))
+        c.roomId === techRoom && (c.state === 'active' || c.state === 'resolving')
       )
     : []
 
@@ -437,27 +436,32 @@
                 {#each techRoomCrises as crisis}
                   {@const typeDef = CRISIS_TYPES[crisis.type]}
                   {@const isCoop = typeDef?.cooperative}
+                  {@const takenByOther = crisis.state === 'resolving' && crisis.assignedTo !== currentTech.id}
                   <div class="crisis-entry crisis-entry__sev--{crisis.severity <= 1 ? 'low' : crisis.severity === 2 ? 'med' : 'high'}">
                     <div class="crisis-entry__info">
                       <span class="crisis-entry__name">{crisis.name}</span>
-                      {#if isCoop}
+                      {#if takenByOther}
+                        <span class="crisis-entry__coop">⟳ En cours de réparation...</span>
+                      {:else if isCoop}
                         <span class="crisis-entry__coop">
                           {crisis.coopPhase1Done ? 'Phase 1 ✓' : '⚙ 2 techniciens requis'}
                         </span>
                       {/if}
                     </div>
-                    {#if !isCoop}
-                      <button class="btn btn--primary btn--sm"
-                        disabled={!!activeCrisis || currentTech.injured || currentTech.state === 'resolving'}
-                        on:pointerdown={() => startMinigame(currentTech.id, crisis)}>
-                        Intervenir
-                      </button>
-                    {:else if !crisis.coopPhase1Done}
-                      <button class="btn btn--primary btn--sm"
-                        disabled={!!activeCrisis || currentTech.state === 'resolving'}
-                        on:pointerdown={() => startMinigame(currentTech.id, crisis)}>
-                        Phase 1
-                      </button>
+                    {#if !takenByOther}
+                      {#if !isCoop}
+                        <button class="btn btn--primary btn--sm"
+                          disabled={!!activeCrisis || currentTech.injured || currentTech.state === 'resolving'}
+                          on:pointerdown={() => startMinigame(currentTech.id, crisis)}>
+                          Intervenir
+                        </button>
+                      {:else if !crisis.coopPhase1Done}
+                        <button class="btn btn--primary btn--sm"
+                          disabled={!!activeCrisis || currentTech.state === 'resolving'}
+                          on:pointerdown={() => startMinigame(currentTech.id, crisis)}>
+                          Phase 1
+                        </button>
+                      {/if}
                     {/if}
                   </div>
                 {/each}

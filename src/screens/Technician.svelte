@@ -39,10 +39,10 @@
   $: roomImage = roomData?.status === 'destroyed'
     ? (roomData?.imageDamaged ?? '') : (roomData?.image ?? '')
 
-  // Crises in my current room
+  // Crises in my current room (all active/resolving — including AI-handled ones)
   $: roomCrises = myRoom && gs
     ? Object.values(gs.crises ?? {}).filter(c =>
-        c.roomId === myRoom && (c.state === 'active' || (c.state === 'resolving' && c.assignedTo === mySlot?.id))
+        c.roomId === myRoom && (c.state === 'active' || c.state === 'resolving')
       )
     : []
 
@@ -282,10 +282,13 @@
             {@const typeDef = CRISIS_TYPES[crisis.type]}
             {@const isCoop = typeDef?.cooperative}
             {@const myPhase1 = isCoop && crisis.coopPhase1By === mySlot?.id}
+            {@const takenByOther = crisis.state === 'resolving' && crisis.assignedTo !== mySlot?.id}
             <div class="crisis-entry crisis-entry__sev--{crisis.severity <= 1 ? 'low' : crisis.severity === 2 ? 'med' : 'high'}">
               <div class="crisis-entry__info">
                 <span class="crisis-entry__name">{crisis.name}</span>
-                {#if isCoop}
+                {#if takenByOther}
+                  <span class="crisis-entry__coop">⟳ En cours de réparation...</span>
+                {:else if isCoop}
                   <span class="crisis-entry__coop">
                     {crisis.coopPhase1Done
                       ? (myPhase1 ? 'Phase 1 ✓ — En attente du partenaire' : 'Phase 1 ✓')
@@ -293,18 +296,20 @@
                   </span>
                 {/if}
               </div>
-              {#if !isCoop}
-                <button class="btn btn--primary btn--sm"
-                  disabled={!!activeCrisis || mySlot?.state === 'resolving'}
-                  on:pointerdown={() => startMinigame(crisis)}>
-                  Intervenir
-                </button>
-              {:else if !crisis.coopPhase1Done}
-                <button class="btn btn--primary btn--sm"
-                  disabled={!!activeCrisis || mySlot?.state === 'resolving'}
-                  on:pointerdown={() => startMinigame(crisis)}>
-                  Phase 1
-                </button>
+              {#if !takenByOther}
+                {#if !isCoop}
+                  <button class="btn btn--primary btn--sm"
+                    disabled={!!activeCrisis || mySlot?.state === 'resolving'}
+                    on:pointerdown={() => startMinigame(crisis)}>
+                    Intervenir
+                  </button>
+                {:else if !crisis.coopPhase1Done}
+                  <button class="btn btn--primary btn--sm"
+                    disabled={!!activeCrisis || mySlot?.state === 'resolving'}
+                    on:pointerdown={() => startMinigame(crisis)}>
+                    Phase 1
+                  </button>
+                {/if}
               {/if}
             </div>
           {/each}
