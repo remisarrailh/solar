@@ -85,7 +85,7 @@
     <div class="overlay">
       <div class="overlay__panel">
         <div class="overlay__title">ENTRER LE CODE DE LA SALLE</div>
-        <input class="input-code" type="text" placeholder="EX: NEBULA-4F2A" maxlength="20"
+        <input class="input-code" type="text" placeholder="79785f25-0ed3-4e5b-..." maxlength="36"
                bind:value={joinCode} autocomplete="off" spellcheck="false" />
         <div class="overlay__actions">
           <button class="btn btn--primary" on:pointerdown={confirmJoin}>SE CONNECTER</button>
